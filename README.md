@@ -5,7 +5,9 @@ This cute little program attempts to eliminate the need of scrums by keeping tra
 
 ### Features planned:
 [] Custom date range setter (1d, 7d, 14d, 1m, etc.)
+
 [] Counting PR changes into the summary
+
 [] ...
 
 ## Usage Steps
