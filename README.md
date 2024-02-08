@@ -1,5 +1,13 @@
 # We Hate Scrum v0.0.1 [WIP 🚧]
 ---
+## Concept
+This cute little program attempts to eliminate the need of scrums by keeping track of commit messages, number of insertions/deletions against the author for every included work repository in the last day or in any date range [soon].
+
+### Features planned:
+[] Custom date range setter (1d, 7d, 14d, 1m, etc.)
+[] Counting PR changes into the summary
+[] ...
+
 ## Usage Steps
 1. Clone this repo
 1. Get an access token & save it in a file `token.txt` in project root with repo read/write access from GitHub under Settings > Developer Settings > Personal access tokens > Tokens (classic)
