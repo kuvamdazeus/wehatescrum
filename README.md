@@ -4,11 +4,11 @@
 This cute little program attempts to eliminate the need of scrums by keeping track of commit messages, number of insertions/deletions against the author for every included work repository in the last day or in any date range [soon].
 
 ### Features planned:
-[] Custom date range setter (1d, 7d, 14d, 1m, etc.)
+- [ ] Custom date range setter (1d, 7d, 14d, 1m, etc.)
 
-[] Counting PR changes into the summary
+- [ ] Counting PR changes into the summary
 
-[] ...
+- [ ] ...
 
 ## Usage Steps
 1. Clone this repo
