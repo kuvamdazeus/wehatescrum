@@ -19,16 +19,46 @@ type CommitStat struct {
 	FilesChanged []string
 }
 
-type Summary map[string]map[string][]CommitStat
+type SummaryContents map[string]map[string][]CommitStat
 
-func generate_summary() {
-	files, err := os.ReadDir("./tmp")
+type Summary struct {
+	Contents SummaryContents
+	GeneratedAt int64
+}
+
+func getSummary() (Summary, error) {
+	summaryFile, err := os.ReadFile("summary.json")
+  if err != nil {
+		return Summary{
+			GeneratedAt: 0,
+		}, err
+	}
+  
+  var summary Summary
+  err = json.Unmarshal(summaryFile, &summary)
 	if err != nil {
-		fmt.Println("BRUH, not working...")
+		return Summary{
+			GeneratedAt: 0,
+		}, err
+	}
+
+  return summary, nil
+}
+
+func generateSummary(force bool) {
+	summary, _ := getSummary()
+	fmt.Println(time.Now().Unix(), summary.GeneratedAt)
+	if (time.Now().Unix() - summary.GeneratedAt <= 1 * 24 * 60 * 60) && !force {
 		return
 	}
 
-	summary := make(Summary)
+	files, err := os.ReadDir("./tmp")
+	if err != nil {
+		fmt.Println("BRUH, not working...", err)
+		return
+	}
+
+	summaryContents := make(SummaryContents)
 
 	for _, file := range files {
 		if !file.IsDir() {
@@ -61,7 +91,7 @@ func generate_summary() {
 
 		commits, _ := repo.CommitObjects()
 		commits.ForEach(func(commit *object.Commit) error {
-			if time.Now().Unix()-commit.Author.When.Unix() <= 24*60*60 {
+			if time.Now().Unix()-commit.Author.When.Unix() <= 24 * 60 * 60 {
 				stats, _ := commit.Stats()
 
 				author := fmt.Sprintf("%s <%s>", commit.Author.Name, commit.Author.Email)
@@ -71,6 +101,10 @@ func generate_summary() {
 
 				for _, stat := range strings.Split(strings.Trim(stats.String(), "\n"), "\n") {
 					tmp := strings.Split(stat, " | ")
+					if len(tmp) < 2 {
+						continue
+					}
+
 					nChanges, _ := strconv.Atoi(strings.Split(tmp[1], " ")[0])
 
 					filesChanged = append(filesChanged, strings.Trim(tmp[0], " "))
@@ -90,7 +124,7 @@ func generate_summary() {
 			return nil
 		})
 
-		summary[file.Name()] = authorStats
+		summaryContents[file.Name()] = authorStats
 	}
 
 	fileName := "summary.json"
@@ -100,6 +134,11 @@ func generate_summary() {
 		return
 	}
 	defer file.Close()
+
+	summary = Summary {
+		GeneratedAt: time.Now().Unix(),
+		Contents: summaryContents,
+	}
 
 	encoder := json.NewEncoder(file)
 	encoder.SetEscapeHTML(false)

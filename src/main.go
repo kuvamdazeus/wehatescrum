@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-  generate_summary()
+	generateSummary(false)
   
   PORT := os.Getenv("PORT")
   if PORT == "" {

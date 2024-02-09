@@ -1,0 +1,2 @@
+echo "Running wehatescrum dirprofile"
+alias fly-deploy='fly deploy --local-only --build-arg gh_token="$(cat token.txt)"'
