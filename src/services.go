@@ -45,16 +45,16 @@ func getSummary() (Summary, error) {
 			GeneratedAt: 0,
 		}, err
 	}
-  
-  var summary Summary
-  err = json.Unmarshal([]byte(strSummary), &summary)
+
+	var summary Summary
+	err = json.Unmarshal([]byte(strSummary), &summary)
 	if err != nil {
 		return Summary{
 			GeneratedAt: 0,
 		}, err
 	}
-
-  return summary, nil
+	
+	return summary, nil
 }
 
 func generateSummary(force bool) {

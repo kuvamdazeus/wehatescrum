@@ -6,12 +6,12 @@ import (
 )
 
 type Response struct {
-  Message string
-  Data any
+	Message string
+	Data any
 }
 
 func (res Response) WriteResponse(writer http.ResponseWriter, statusCode int) {
-  bytesRes, _ := json.Marshal(res)
-  writer.WriteHeader(statusCode)
-  writer.Write(bytesRes)
+	bytesRes, _ := json.Marshal(res)
+	writer.WriteHeader(statusCode)
+	writer.Write(bytesRes)
 }

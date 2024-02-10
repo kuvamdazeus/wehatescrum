@@ -10,14 +10,14 @@ import (
 var redisClient *redis.Client = nil
 
 func getRedisClient() (*redis.Client, error) {
-  opts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
-  if err != nil {
-    return redisClient, err
-  }
+	opts, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+	if err != nil {
+		return redisClient, err
+	}
 
-  if redisClient == nil {
-    redisClient = redis.NewClient(opts)
-  }
+	if redisClient == nil {
+		redisClient = redis.NewClient(opts)
+	}
 
-  return redisClient, nil
+	return redisClient, nil
 }
