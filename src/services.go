@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -27,15 +28,26 @@ type Summary struct {
 }
 
 func getSummary() (Summary, error) {
-	summaryFile, err := os.ReadFile("summary.json")
-  if err != nil {
+	ctx := context.Background()
+	
+	// get initialized redis client
+	redisClient, err := getRedisClient()
+	if err != nil {
 		return Summary{
+			GeneratedAt: 0,
+		}, err
+	}
+
+	// fetch summary data from redis
+	strSummary, err := redisClient.Get(ctx, getConstants().redisSummaryKey).Result()
+	if err != nil {
+		return Summary {
 			GeneratedAt: 0,
 		}, err
 	}
   
   var summary Summary
-  err = json.Unmarshal(summaryFile, &summary)
+  err = json.Unmarshal([]byte(strSummary), &summary)
 	if err != nil {
 		return Summary{
 			GeneratedAt: 0,
@@ -52,6 +64,7 @@ func generateSummary(force bool) {
 		return
 	}
 
+	fmt.Println("Generating summary...")
 	files, err := os.ReadDir("./tmp")
 	if err != nil {
 		fmt.Println("BRUH, not working...", err)
@@ -127,28 +140,28 @@ func generateSummary(force bool) {
 		summaryContents[file.Name()] = authorStats
 	}
 
-	fileName := "summary.json"
-	file, err := os.Create(fileName)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-
 	summary = Summary {
 		GeneratedAt: time.Now().Unix(),
 		Contents: summaryContents,
 	}
-
-	encoder := json.NewEncoder(file)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-
-	err = encoder.Encode(summary)
+	
+	bSummaryJson, err := json.Marshal(summary)
 	if err != nil {
-		fmt.Println("Error encountered while encoding to JSON:", err)
+		fmt.Println("Error occured while json encoding", err)
 		return
 	}
 
-	fmt.Println("Summary written to file:", fileName)
+	ctx := context.Background()
+	redisClient, err := getRedisClient()
+	if err != nil {
+		fmt.Println("Error occured while fetching redis client", err)
+		return
+	}
+
+	result, err := redisClient.Set(ctx, getConstants().redisSummaryKey, string(bSummaryJson), 0).Result()
+	if err != nil {
+		fmt.Println("Error setting redis data", err)
+	}
+
+	fmt.Println("Redis SET command result: ", result)
 }
