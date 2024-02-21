@@ -1,4 +1,8 @@
-FROM golang:bookworm
+FROM golang:1.22-alpine
+
+RUN apk update
+RUN apk upgrade
+RUN apk add git bash
 
 WORKDIR /app
 COPY . .
@@ -14,4 +18,13 @@ RUN chmod +x ../entrypoint.sh
 RUN ../entrypoint.sh
 
 WORKDIR /app
-ENTRYPOINT ["go", "run", "./src"]
+RUN go build -o bin/main src/*
+
+# =========== STAGE 2 (RUN BUILD) ===========
+FROM alpine
+
+WORKDIR /app
+COPY --from=0 /app/tmp tmp
+COPY --from=0 /app/bin bin
+
+ENTRYPOINT ["./bin/main"]
