@@ -4,7 +4,7 @@
 #
 
 app = 'wehatescrum'
-primary_region = 'hkg'
+primary_region = 'ams'
 
 [build]
 
