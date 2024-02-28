@@ -18,57 +18,60 @@ type CommitStat struct {
 	TotalChanges int
 	Hash         string
 	FilesChanged []string
+	ISO string
 }
 
 type SummaryContents map[string]map[string][]CommitStat
+
+type SummaryOpts struct {
+	force bool
+	date time.Time
+	duration time.Duration
+}
 
 type Summary struct {
 	Contents SummaryContents
 	GeneratedAt int64
 }
 
-func getSummary() (Summary, error) {
+func getRedisSummary(opts SummaryOpts) (Summary, error) {
 	ctx := context.Background()
 	
 	// get initialized redis client
 	redisClient, err := getRedisClient()
 	if err != nil {
-		return Summary{
-			GeneratedAt: 0,
-		}, err
+		return Summary{}, err
 	}
 
 	// fetch summary data from redis
-	strSummary, err := redisClient.Get(ctx, getConstants().redisSummaryKey).Result()
+	strSummary, err := redisClient.Get(ctx, getRedisSummaryKey(opts)).Result()
 	if err != nil {
-		return Summary {
-			GeneratedAt: 0,
-		}, err
+		return Summary{}, err
 	}
 
 	var summary Summary
 	err = json.Unmarshal([]byte(strSummary), &summary)
 	if err != nil {
-		return Summary{
-			GeneratedAt: 0,
-		}, err
+		return Summary{}, err
 	}
 	
 	return summary, nil
 }
 
-func generateSummary(force bool) {
-	summary, _ := getSummary()
-	fmt.Println(time.Now().Unix(), summary.GeneratedAt)
-	if (time.Now().Unix() - summary.GeneratedAt <= 1 * 24 * 60 * 60) && !force {
-		return
+func generateSummary(opts SummaryOpts) (Summary, error) {
+	summary, err := getRedisSummary(opts)
+	if err == nil && !opts.force {
+		fmt.Println("CACHE HIT")
+		return summary, nil
 	}
 
+	fmt.Println(time.Now().Unix(), summary.GeneratedAt)
 	fmt.Println("Generating summary...")
-	files, err := os.ReadDir("./tmp")
+
+	files, err := os.ReadDir("./repos")
 	if err != nil {
 		fmt.Println("BRUH, not working...", err)
-		return
+		return summary, fmt.Errorf("error occured %s", err)
 	}
 
 	summaryContents := make(SummaryContents)
@@ -78,33 +81,41 @@ func generateSummary(force bool) {
 			continue
 		}
 
-		repoPath := fmt.Sprintf("./tmp/%s", file.Name())
+		repoPath := fmt.Sprintf("./repos/%s", file.Name())
 
 		repo, err := git.PlainOpen(repoPath)
 		if err != nil {
-			fmt.Println("ERR: tmp dir contains non-git dir:", repoPath)
+			fmt.Println("ERR: repos dir contains non-git dir:", repoPath)
 			continue
 		}
 
 		worktree, err := repo.Worktree()
 		if err != nil {
 			fmt.Println("Worktree couldn't be resolved", repoPath)
-			return
+			return summary, fmt.Errorf("error occured %s", err)
 		}
 
 		// refName := plumbing.NewReferenceFromStrings("refs/heads/dev_stable", "dev_stable")
 		// worktree.Checkout(&git.CheckoutOptions{
 		// 	Branch: refName.Name(),
 		// })
-		worktree.Pull(&git.PullOptions{
+		err = worktree.Pull(&git.PullOptions{
 			RemoteName: "origin",
 		})
+		if err != nil {
+			fmt.Println("Error pulling repo:", err)
+		}
 
 		authorStats := make(map[string][]CommitStat)
 
 		commits, _ := repo.CommitObjects()
 		commits.ForEach(func(commit *object.Commit) error {
-			if time.Now().Unix()-commit.Author.When.Unix() <= 24 * 60 * 60 {
+			ll := opts.date.Add(-opts.duration).Unix()
+			ul := opts.date.Unix()
+
+			commitTime := commit.Author.When.Unix()
+			
+			if commitTime >= ll && commitTime <= ul {
 				stats, _ := commit.Stats()
 
 				author := fmt.Sprintf("%s <%s>", commit.Author.Name, commit.Author.Email)
@@ -129,6 +140,7 @@ func generateSummary(force bool) {
 					TotalChanges: totalChanges,
 					Hash:         commit.Hash.String(),
 					FilesChanged: filesChanged,
+					ISO: commit.Author.When.Format(getConstants().timeLayout),
 				}
 
 				authorStats[author] = append(authorStats[author], commitStat)
@@ -148,20 +160,23 @@ func generateSummary(force bool) {
 	bSummaryJson, err := json.Marshal(summary)
 	if err != nil {
 		fmt.Println("Error occured while json encoding", err)
-		return
+		return summary, fmt.Errorf("error occured %s", err)
 	}
 
 	ctx := context.Background()
 	redisClient, err := getRedisClient()
 	if err != nil {
 		fmt.Println("Error occured while fetching redis client", err)
-		return
+		return summary, fmt.Errorf("error occured %s", err)
 	}
 
-	result, err := redisClient.Set(ctx, getConstants().redisSummaryKey, string(bSummaryJson), 0).Result()
+	redisKey := getRedisSummaryKey(opts)
+	result, err := redisClient.Set(ctx, redisKey, string(bSummaryJson), time.Hour * 24).Result()
 	if err != nil {
 		fmt.Println("Error setting redis data", err)
 	}
 
 	fmt.Println("Redis SET command result: ", result)
+
+	return summary, nil
 }

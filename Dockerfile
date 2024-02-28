@@ -13,7 +13,7 @@ ENV PORT 8000
 
 EXPOSE 8000
 
-WORKDIR /app/tmp
+WORKDIR /app/repos
 RUN chmod +x ../entrypoint.sh
 RUN ../entrypoint.sh
 
@@ -24,7 +24,7 @@ RUN go build -o bin/main src/*
 FROM alpine
 
 WORKDIR /app
-COPY --from=0 /app/tmp tmp
+COPY --from=0 /app/repos repos
 COPY --from=0 /app/bin bin
 
 ENTRYPOINT ["./bin/main"]

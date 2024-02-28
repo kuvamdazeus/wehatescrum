@@ -1,4 +1,6 @@
+repos/
 tmp/
+debug
 bin/
 .env
 token.txt

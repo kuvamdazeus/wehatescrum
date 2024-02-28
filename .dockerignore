@@ -2,4 +2,6 @@
 token.txt
 summary.json
 tmp/
+repos/
+debug
 bin/

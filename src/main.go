@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	generateSummary(false)
+	generateSummary(SummaryOpts{
+		date: time.Now(),
+		duration: 24 * time.Hour,
+	})
 
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
@@ -15,7 +21,6 @@ func main() {
 	}
 
 	http.HandleFunc("/summary", fetchSummaryJson)
-	http.HandleFunc("/trigger", triggerSummaryGenerate)
 
 	fmt.Println("Starting server at port", PORT)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), nil); err != nil {
