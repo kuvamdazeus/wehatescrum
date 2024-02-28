@@ -44,7 +44,6 @@ func fetchSummaryJson(writer http.ResponseWriter, r *http.Request) {
 		opts.duration = time.Hour * 24
 	} else {
 		n, err := strconv.Atoi(duration[:len(duration)-1])
-		strconv.ParseInt()
 		if err != nil {
 			res := Response{
 				Message: fmt.Sprint(err),
