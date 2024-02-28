@@ -17,17 +17,19 @@ This cute little program attempts to eliminate the need of scrums by keeping tra
 1. Build Docker image by running: `docker build --build-arg gh_token="$(cat token.txt)" -t wehatescrum .`
 1. Upload the built image to your preferred registry & run the Docker image `docker run -p 8080:8080 --env-file ./.env wehatescrum`
 
+*See `.env.example` file for more info on providing a .env file to `docker run` command*
+
 ### `entrypoint.sh` template
 ```bash
 #!/bin/bash
 
-# ONLY PARTS with "<...>" present to be edited & modified, it works, please don't touch it...
+# ONLY PARTS with "<...>" present to be edited, it works, please don't touch it...
 
 # List of repositories to clone
 repositories=(
     "--branch <...your branch name...> https://$TOKEN@github.com/<USERNAME>/<REPO_NAME_1>"
     "--branch <...your branch name...> https://$TOKEN@github.com/<USERNAME>/<REPO_NAME_2>"
-    ...
+    <...>
 )
 
 # Use printf to convert the array into a newline-separated string and pipe it into xargs

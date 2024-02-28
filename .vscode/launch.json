@@ -9,7 +9,7 @@
       "name": "Launch",
       "type": "go",
       "request": "launch",
-      "output": "debug",
+      "output": "${workspaceFolder}/debug",
       "program": "${workspaceFolder}/src",
       "cwd": "${workspaceFolder}"
     }
